@@ -1,0 +1,5 @@
+python-telegram-bot==13.13
+SQLAlchemy==2.0.23
+matplotlib==3.7.1
+pandas==2.0.3
+fpdf==1.7.2 
