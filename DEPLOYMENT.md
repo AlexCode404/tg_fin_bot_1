@@ -13,10 +13,21 @@ git clone https://github.com/your-username/tg_fin_bot_1.git
 cd tg_fin_bot_1
 ```
 
-### 2. Настройка бота
-Проверьте, что в файле `config.py` указан правильный токен Telegram бота:
-```python
-TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  # Замените на ваш токен
+### 2. Настройка переменных окружения
+Создайте файл `.env` на основе `.env.example`:
+```bash
+cp .env.example .env
+```
+
+Отредактируйте файл `.env` и укажите ваш токен Telegram бота:
+```bash
+nano .env
+```
+
+```
+TELEGRAM_BOT_TOKEN=your_actual_token_from_botfather
+DATABASE_URI=sqlite:///expenses.db
+BOT_LANGUAGE=ru
 ```
 
 ### 3. Сборка и запуск с Docker Compose
@@ -28,6 +39,7 @@ docker-compose up -d --build
 - Соберет Docker-образ согласно Dockerfile
 - Запустит контейнер в фоновом режиме
 - Настроит автоматический перезапуск контейнера
+- Передаст переменные окружения из .env в контейнер
 
 ### 4. Проверка логов
 ```bash
@@ -58,4 +70,5 @@ cp expenses.db expenses.db.backup
 
 - Контейнер настроен на автоматический перезапуск (restart: always)
 - База данных (expenses.db) и экспортированные файлы (exports/) хранятся вне контейнера
-- Для изменения часового пояса отредактируйте переменную TZ в docker-compose.yml 
+- Для изменения часового пояса отредактируйте переменную TZ в docker-compose.yml
+- НИКОГДА не добавляйте файл .env в репозиторий! Он содержит секретные данные 
