@@ -1,0 +1,46 @@
+name: Deploy Bot
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:  # Для ручного запуска
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy to server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          # Копируем файлы на сервер
+          scp -r ./* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:~/tg_fin_bot/
+          
+          # Создаем .env файл на сервере
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd ~/tg_fin_bot && \
+            echo 'TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}' > .env && \
+            echo 'DATABASE_URI=sqlite:///expenses.db' >> .env && \
+            echo 'BOT_LANGUAGE=ru' >> .env && \
+            
+            # Перезапуск контейнеров
+            docker-compose down && \
+            docker-compose up -d --build"
+            
+      - name: Check deployment status
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd ~/tg_fin_bot && docker-compose ps" 

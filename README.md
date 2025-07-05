@@ -18,50 +18,90 @@
 
 ## Установка и запуск
 
+### Локальный запуск
+
 1. Клонируйте репозиторий:
 
-```
-git clone https://github.com/your-username/expense-bot.git
-cd expense-bot
+```bash
+git clone https://github.com/your-username/tg_fin_bot_1.git
+cd tg_fin_bot_1
 ```
 
-2. Установите зависимости:
+2. Создайте виртуальное окружение (рекомендуется Python 3.9):
 
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# или 
+.\venv\Scripts\activate   # Windows
 ```
+
+3. Установите зависимости:
+
+```bash
 pip install -r requirements.txt
 ```
 
-3. Создайте бота через [@BotFather](https://t.me/BotFather) и получите токен
+4. Создайте файл `.env` с переменными окружения:
 
-4. Отредактируйте файл `config.py`, добавив полученный токен:
-
-```python
-TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  # Замените на ваш токен
+```
+TELEGRAM_BOT_TOKEN=your_token_here
+DATABASE_URI=sqlite:///expenses.db
+BOT_LANGUAGE=ru
 ```
 
 5. Запустите бота:
 
-```
+```bash
 python bot.py
 ```
 
+### Запуск через Docker
+
+1. Создайте файл `.env` с переменными окружения
+2. Запустите с помощью Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+### Деплой на сервер через CI/CD
+
+Для автоматического деплоя на сервер:
+
+1. Настройте сервер согласно инструкциям в [SERVER_SETUP.md](SERVER_SETUP.md)
+2. Настройте GitHub секреты:
+   - `SSH_PRIVATE_KEY` - приватный SSH ключ для доступа
+   - `SERVER_IP` - IP-адрес сервера
+   - `SERVER_USER` - имя пользователя на сервере (deployer)
+   - `TELEGRAM_BOT_TOKEN` - токен Telegram бота
+3. Запушьте изменения в ветку main/master для автоматического деплоя
+
 ## Технические детали
 
-- Python 3.6+ 
+- Python 3.9
 - SQLite для хранения данных
 - python-telegram-bot для работы с Telegram API
-- Matplotlib для создания графиков в отчетах
-- FPDF для генерации PDF отчетов
+- Docker и Docker Compose для контейнеризации
+- GitHub Actions для CI/CD
+- Prometheus и Grafana для мониторинга
 
 ## Структура проекта
 
 - `bot.py` - основной файл с логикой бота
-- `config.py` - файл конфигурации
+- `config.py` - конфигурация с переменными окружения
 - `database.py` - работа с базой данных
 - `expense_manager.py` - управление расходами
 - `export.py` - экспорт данных
-- `exports/` - папка для экспортируемых файлов (создается автоматически)
+- `Dockerfile` и `docker-compose.yml` - для контейнеризации
+- `.github/workflows/` - CI/CD пайплайны
+- `tests/` - модульные тесты
+- `monitoring/` - конфигурация мониторинга
 
-## Настройка категорий
+## DevOps подход
 
-Стандартные категории можно изменить в файле `config.py`, отредактировав список `CATEGORIES`. 
+- **CI/CD**: Автоматический деплой через GitHub Actions
+- **Контейнеризация**: Docker для изоляции и переносимости
+- **Мониторинг**: Prometheus и Grafana для отслеживания производительности
+- **Тестирование**: Автоматические тесты при каждом коммите
+- **Секреты**: Безопасное хранение токенов через переменные окружения 
