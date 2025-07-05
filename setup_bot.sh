@@ -47,10 +47,21 @@ if ! command -v docker &> /dev/null; then
   add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   apt update
   apt install -y docker-ce docker-ce-cli containerd.io
-  systemctl enable docker
-  systemctl start docker
+  
+  # Убеждаемся, что служба Docker запущена и включена
+  systemctl enable docker.service
+  systemctl start docker.service
 else
   echo "Docker уже установлен."
+fi
+
+# Проверка существования службы Docker
+if ! systemctl list-unit-files | grep -q docker; then
+  echo "ВНИМАНИЕ: Служба docker.service не найдена, устанавливаем Docker иначе..."
+  apt remove -y docker-ce docker-ce-cli containerd.io
+  apt install -y docker.io
+  systemctl enable docker.service
+  systemctl start docker.service
 fi
 
 # 5. Установка Docker Compose
@@ -126,20 +137,44 @@ chmod +x "$BOT_DIR/update.sh"
 echo "11. Проверка состояния контейнеров..."
 docker-compose ps
 
-# 12. Создание systemd сервиса для автозапуска (опционально)
-echo "12. Создание systemd сервиса..."
+# 12. Создание скрипта автозапуска
+echo "12. Создание скрипта автозапуска..."
+cat > "$BOT_DIR/start.sh" << 'EOL'
+#!/bin/bash
+BOT_DIR="/opt/tg_fin_bot"
+cd "$BOT_DIR"
+docker-compose up -d
+EOL
+
+chmod +x "$BOT_DIR/start.sh"
+
+# 13. Создание службы Systemd для автозапуска
+echo "13. Создание службы systemd..."
+
+# Определение доступной службы Docker
+DOCKER_SERVICE="docker.service"
+if systemctl list-unit-files | grep -q "docker.socket"; then
+  DOCKER_SERVICE="docker.socket"
+elif systemctl list-unit-files | grep -q "containerd.service"; then
+  DOCKER_SERVICE="containerd.service"
+elif systemctl list-unit-files | grep -q "docker.io.service"; then
+  DOCKER_SERVICE="docker.io.service"
+fi
+
+echo "Обнаружена служба Docker: $DOCKER_SERVICE"
+
 cat > "/etc/systemd/system/tgbot.service" << EOL
 [Unit]
 Description=Telegram Finance Bot
-After=docker.service
-Requires=docker.service
+After=$DOCKER_SERVICE
+Requires=$DOCKER_SERVICE
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=$BOT_DIR
-ExecStart=/usr/local/bin/docker-compose up -d
-ExecStop=/usr/local/bin/docker-compose down
+ExecStart=$BOT_DIR/start.sh
+ExecStop=/usr/bin/docker-compose down
 TimeoutStartSec=0
 
 [Install]
@@ -148,6 +183,11 @@ EOL
 
 systemctl daemon-reload
 systemctl enable tgbot.service
+systemctl start tgbot.service
+
+# 14. Добавление задания в crontab для автоматического перезапуска
+echo "14. Настройка автоматического перезапуска через cron..."
+(crontab -l 2>/dev/null; echo "@reboot $BOT_DIR/start.sh > /dev/null 2>&1") | crontab -
 
 echo "=== Установка завершена ==="
 echo "Бот установлен и запущен. Он будет автоматически перезапускаться при перезагрузке сервера."
@@ -155,6 +195,6 @@ echo ""
 echo "Полезные команды:"
 echo "- Просмотр логов: docker-compose -f $BOT_DIR/docker-compose.yml logs -f"
 echo "- Обновление бота: sudo $BOT_DIR/update.sh"
-echo "- Перезапуск бота: sudo systemctl restart tgbot"
+echo "- Перезапуск бота вручную: $BOT_DIR/start.sh"
 echo "- Директория бота: $BOT_DIR"
 echo "- База данных: $BOT_DIR/expenses.db" 
