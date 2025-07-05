@@ -215,4 +215,6 @@ def main() -> None:
     updater.idle()
 
 if __name__ == '__main__':
+    # Применение патча для замены imghdr
+    import fpdf_patch
     main() 

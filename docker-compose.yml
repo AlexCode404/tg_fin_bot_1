@@ -1,0 +1,17 @@
+services:
+  tg_bot:
+    build: .
+    container_name: tg_finance_bot
+    restart: always
+    volumes:
+      # Для сохранения базы данных между перезапусками
+      - ./expenses.db:/app/expenses.db
+      # Для сохранения экспортированных файлов
+      - ./exports:/app/exports
+    environment:
+      - TZ=Europe/Moscow  # Настройте нужный часовой пояс
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - DATABASE_URI=${DATABASE_URI:-sqlite:///expenses.db}
+      - BOT_LANGUAGE=${BOT_LANGUAGE:-ru}
+    env_file:
+      - .env 
