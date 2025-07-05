@@ -14,7 +14,7 @@ fi
 
 # Установка переменных
 TELEGRAM_TOKEN=$1
-GITHUB_REPO=${2:-"https://github.com/your-username/tg_fin_bot_1.git"}
+GITHUB_REPO=${2:-"https://github.com/AlexCode404/tg_fin_bot_1.git"}
 BOT_DIR="/opt/tg_fin_bot"
 
 echo "=== Начало установки Telegram бота ==="
